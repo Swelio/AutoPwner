@@ -1,7 +1,12 @@
-configure: | venv
+.DEFAULT_GOAL := help
+
+configure:
 	scripts/configure.sh
 
 lint: venv
-	source venv/bin/activate
+	. venv/bin/activate
 	black src/
 	flake8 src/
+
+help:
+	echo "make <configure|lint|run>"

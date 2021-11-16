@@ -8,9 +8,7 @@ from typing import Union
 
 __all__ = ["get_logger", "ColoredFormatted"]
 
-LOG_FORMAT = (
-    "%(levelname)s::%(asctime)s::%(name)s::%(filename)s::%(lineno)d::%(message)s"
-)
+LOG_FORMAT = "%(levelname)s::%(asctime)s::%(name)s::%(message)s"
 LOG_LEVEL = "DEBUG"
 
 
