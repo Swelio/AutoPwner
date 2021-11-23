@@ -16,6 +16,7 @@ def get_subclasses(base_class: Type) -> Iterator[Type]:
         yield from get_subclasses(subclass)
 
 
+# TODO: plugin subcommand parser to integrate into a global command parser
 class BasePlugin:
     name: str = None
     logger = get_logger(name)
