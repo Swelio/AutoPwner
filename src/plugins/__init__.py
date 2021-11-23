@@ -2,8 +2,9 @@ from os import PathLike
 from pathlib import Path
 from typing import Union
 
-from plugins.base_plugin import BasePlugin, get_subclasses
+from plugins.base_plugin import BasePlugin, PluginError, get_subclasses  # noqa: F401
 from plugins.nmap import NmapPlugin  # noqa: F401
+from plugins.searchsploit import SearchsploitPlugin  # noqa: F401
 
 
 def init_plugins(plugin_dir: Union[str, PathLike]):

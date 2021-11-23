@@ -1,3 +1,4 @@
+import os
 from logging import Logger
 from pathlib import Path
 from typing import Type, Iterator
@@ -15,6 +16,10 @@ def get_subclasses(base_class: Type) -> Iterator[Type]:
     for subclass in base_class.__subclasses__():
         yield subclass
         yield from get_subclasses(subclass)
+
+
+class PluginError(Exception):
+    """Plugin has failed to run."""
 
 
 # TODO: plugin subcommand parser to integrate into a global command parser
@@ -45,10 +50,19 @@ class BasePlugin:
         cls.get_logger().info(f"Initialize plugin {cls.name}")
         cls.plugins_dir = base_dir.absolute()
 
+        result_dir = cls.get_plugin_dir()
+
+        if not result_dir.exists():
+            os.makedirs(result_dir, exist_ok=True)
+
+        cls.get_logger().info(
+            f"{cls.name} plugin results are available at '{cls.get_plugin_dir()}'"
+        )
+
     @classmethod
     def get_plugin_dir(cls) -> Path:
         """Return path of plugin folder."""
-        raise NotImplementedError
+        return cls.plugins_dir.absolute() / cls.name
 
     def run(self, *args, **kwargs):
         """Plugin executable task."""

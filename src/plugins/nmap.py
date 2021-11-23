@@ -10,23 +10,6 @@ from plugins.base_plugin import BasePlugin
 class NmapPlugin(BasePlugin):
     name = "nmap"
 
-    @classmethod
-    def init_plugin(cls, base_dir: Path):
-        super().init_plugin(base_dir)
-
-        result_dir = cls.get_plugin_dir()
-
-        if not result_dir.exists():
-            os.makedirs(result_dir, exist_ok=True)
-
-        cls.get_logger().info(
-            f"{cls.name} plugin results are available at '{cls.get_plugin_dir()}'"
-        )
-
-    @classmethod
-    def get_plugin_dir(cls) -> Path:
-        return cls.plugins_dir.absolute() / cls.name
-
     def run(self, host: str, full: bool = False):
         """
         Use Nmap to discover host services. If full is True, then scan all ports.
