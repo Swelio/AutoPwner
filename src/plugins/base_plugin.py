@@ -39,3 +39,4 @@ class BasePlugin:
 
     def __call__(self, *args, **kwargs):
         """Plugin executable task."""
+        self.logger.info("Start running")

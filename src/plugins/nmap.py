@@ -33,6 +33,7 @@ class NmapPlugin(BasePlugin):
         Use Nmap to discover host services. If full is True, then scan all ports.
         For each service, yield data as: (port, name, product, version)
         """
+        super().__call__()
 
         result_path = self.plugins_dir / "services"
         xml_path = Path(str(result_path) + ".xml")
