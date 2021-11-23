@@ -25,8 +25,9 @@ class PluginError(Exception):
 # TODO: plugin subcommand parser to integrate into a global command parser
 class BasePlugin:
     name: str = None
-    plugins_dir: Path = None
+    requirements: list["BasePlugin"] = []
 
+    plugins_dir: Path = None
     _logger = None
 
     def __init__(self):
@@ -66,4 +67,11 @@ class BasePlugin:
 
     def run(self, *args, **kwargs):
         """Plugin executable task."""
+        for plugin in self.requirements:
+            if len(list(plugin.get_plugin_dir().iterdir())) == 0:
+                self.get_logger().error(
+                    f"Plugin requirement not satisfied: {plugin.name}"
+                )
+                return
+
         self.get_logger().info("Start running")

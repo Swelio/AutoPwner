@@ -7,6 +7,7 @@ from plugins.nmap import NmapPlugin
 
 class SearchsploitPlugin(BasePlugin):
     name = "searchsploit"
+    requirements = [NmapPlugin]
 
     def run(self, host: str):
         """
