@@ -15,10 +15,18 @@ class NmapPlugin(BasePlugin):
     def init_plugin(cls, base_dir: Path):
         super().init_plugin(base_dir)
 
-        result_dir = base_dir / cls.name
+        result_dir = cls.get_plugin_dir()
 
         if not result_dir.exists():
             os.makedirs(result_dir, exist_ok=True)
+
+        cls.logger.info(
+            f"{cls.name} plugin results are available at '{cls.get_plugin_dir()}'"
+        )
+
+    @classmethod
+    def get_plugin_dir(cls) -> Path:
+        return cls.plugins_dir.absolute() / cls.name
 
     def __call__(self, host: str, full: bool = False):
         """

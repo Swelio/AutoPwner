@@ -29,7 +29,12 @@ class BasePlugin:
         :param base_dir: plugins base directory installation.
         """
         cls.logger.info(f"Initialize plugin {cls.name}")
-        cls.plugins_dir = base_dir
+        cls.plugins_dir = base_dir.absolute()
+
+    @classmethod
+    def get_plugin_dir(cls) -> Path:
+        """Return path of plugin folder."""
+        raise NotImplementedError
 
     def __call__(self, *args, **kwargs):
         """Plugin executable task."""

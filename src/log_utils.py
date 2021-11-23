@@ -67,8 +67,8 @@ def get_logger(
 class ColoredFormatted(logging.Formatter):
     """Color console outputs according to log level."""
 
-    COLOR_SEQUENCE = r"\033[0;{color}m\]"
-    DEFAULT_SEQUENCE = r"\033[0;0m\]"
+    COLOR_SEQUENCE = "\033[0;{color}m"
+    DEFAULT_SEQUENCE = "\033[0;0m"
 
     BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(30, 38)
 
@@ -76,8 +76,8 @@ class ColoredFormatted(logging.Formatter):
         logging.CRITICAL: RED,
         logging.ERROR: RED,
         logging.WARNING: YELLOW,
-        logging.INFO: WHITE,
-        logging.DEBUG: BLUE,
+        logging.INFO: BLUE,
+        logging.DEBUG: CYAN,
     }
 
     def format(self, record: LogRecord) -> str:
