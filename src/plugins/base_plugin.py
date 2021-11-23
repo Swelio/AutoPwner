@@ -1,3 +1,4 @@
+from logging import Logger
 from pathlib import Path
 from typing import Type, Iterator
 
@@ -19,8 +20,20 @@ def get_subclasses(base_class: Type) -> Iterator[Type]:
 # TODO: plugin subcommand parser to integrate into a global command parser
 class BasePlugin:
     name: str = None
-    logger = get_logger(name)
     plugins_dir: Path = None
+
+    _logger = None
+
+    def __init__(self):
+        self.init_plugin(self.plugins_dir)
+        self.get_logger().debug("Plugin ready!")
+
+    @classmethod
+    def get_logger(cls) -> Logger:
+        if cls._logger is None:
+            cls._logger = get_logger(cls.name)
+
+        return cls._logger
 
     @classmethod
     def init_plugin(cls, base_dir: Path):
@@ -29,7 +42,7 @@ class BasePlugin:
 
         :param base_dir: plugins base directory installation.
         """
-        cls.logger.info(f"Initialize plugin {cls.name}")
+        cls.get_logger().info(f"Initialize plugin {cls.name}")
         cls.plugins_dir = base_dir.absolute()
 
     @classmethod
@@ -37,6 +50,6 @@ class BasePlugin:
         """Return path of plugin folder."""
         raise NotImplementedError
 
-    def __call__(self, *args, **kwargs):
+    def run(self, *args, **kwargs):
         """Plugin executable task."""
-        self.logger.info("Start running")
+        self.get_logger().info("Start running")

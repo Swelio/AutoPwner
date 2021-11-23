@@ -15,4 +15,4 @@ def init_plugins(plugin_dir: Union[str, PathLike]):
         if plugin_class.name is None:
             continue
 
-        plugin_class.init_plugin(plugin_dir)
+        plugin_class.plugins_dir = plugin_dir

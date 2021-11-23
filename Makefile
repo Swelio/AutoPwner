@@ -14,4 +14,4 @@ check-lint: venv
 	flake8 src/
 
 help:
-	echo "make <configure|lint|run>"
+	echo "make <configure|lint|check-lint>"

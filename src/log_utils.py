@@ -20,7 +20,7 @@ def get_logger(
     color_console: bool = True,
     log_file: str = None,
 ) -> logging.Logger:
-    """Setup logger and attach handlers on it."""
+    """Setup class_logger and attach handlers on it."""
 
     if isinstance(log_level, str):
         log_level = logging.getLevelName(log_level)
@@ -44,7 +44,7 @@ def get_logger(
 
     handlers = set()
 
-    # Setup handlers and attach them to logger
+    # Setup handlers and attach them to class_logger
     if console_output is True:
         console_handler = logging.StreamHandler()
         if color_console is True:
