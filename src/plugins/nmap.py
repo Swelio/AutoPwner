@@ -35,7 +35,7 @@ class NmapPlugin(BasePlugin):
         super().run()
         self.get_logger().info(f"Analysis will run on {host}")
 
-        result_path = self.plugins_dir / "services"
+        result_path = self.get_plugin_dir() / "services"
         xml_path = Path(str(result_path) + ".xml")
 
         if xml_path.exists():
