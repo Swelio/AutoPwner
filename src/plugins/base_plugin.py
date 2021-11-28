@@ -65,6 +65,14 @@ class BasePlugin:
         """Return path of plugin folder."""
         return cls.plugins_dir.absolute() / cls.name
 
+    @classmethod
+    def get_parsed_file(cls) -> Path:
+        return cls.get_plugin_dir() / "parsed.json"
+
+    @classmethod
+    def get_result_file(cls) -> Path:
+        raise NotImplementedError
+
     def run(self, *args, **kwargs):
         """Plugin executable task."""
         for plugin in self.requirements:
@@ -75,18 +83,3 @@ class BasePlugin:
                 return
 
         self.get_logger().info("Start running")
-
-    def get_result_file(self) -> Path:
-        raise NotImplementedError
-
-    def get_parsed_file(self) -> Path:
-        raise NotImplementedError
-
-    def get_results(self) -> dict[str, dict[str, ...]]:
-        """
-        Parse plugin results to build a dictionary of targets and their results.
-        :return: {
-            target: { plugin_results: ... }
-        }
-        """
-        raise NotImplementedError

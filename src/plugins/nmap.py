@@ -13,11 +13,9 @@ from plugins.base_plugin import BasePlugin
 class NmapPlugin(BasePlugin):
     name = "nmap"
 
-    def get_result_file(self) -> Path:
-        return self.get_plugin_dir() / "services.xml"
-
-    def get_parsed_file(self) -> Path:
-        return self.get_plugin_dir() / "parsed.json"
+    @classmethod
+    def get_result_file(cls) -> Path:
+        return cls.get_plugin_dir() / "services.xml"
 
     def run(self, host: str, full: bool = False):
         """
@@ -58,18 +56,19 @@ class NmapPlugin(BasePlugin):
         self.get_logger().info(f"Raw results available at '{result_path}'")
 
         if not self.get_parsed_file().exists():
+            parsed_results = self.get_results()
             with self.get_parsed_file().open("w") as parsed_file_save:
-                parsed_file_save.write(json.dumps(self.get_results()))
+                parsed_file_save.write(json.dumps(parsed_results))
 
         self.get_logger().info(
             f"Parsed results available at '{self.get_parsed_file()}'"
         )
 
-    def get_results(self) -> dict[str, dict[str, ...]]:
+    def get_results(self) -> dict[str, dict[str, dict[str, ...]]]:
         """
         Parse nmap xml file and for each host return its opened services.
         :return: {
-            host: { "services": [] }
+            host: { "services": { "proto/port": { str: ... }}}
         }
         """
 
@@ -82,7 +81,7 @@ class NmapPlugin(BasePlugin):
         self.get_logger().info("Parsing nmap result file...")
 
         for host_node in xml_root.iterfind(".//host"):
-            host_services = []
+            host_services = {}
             host_addr = str(
                 ipaddress.ip_network(host_node.find("address").attrib["addr"])
             )
@@ -90,9 +89,12 @@ class NmapPlugin(BasePlugin):
             for port_node in host_node.iterfind('.//port/state[@state="open"]/..'):
                 service_node = port_node.find("service")
 
+                protocol = port_node.attrib["protocol"]
+                port = int(port_node.attrib["portid"])
+
                 service_data = {
-                    "protocol": port_node.attrib["protocol"],
-                    "port": int(port_node.attrib["portid"]),
+                    "protocol": protocol,
+                    "port": port,
                     "name": service_node.attrib.get("name"),
                     "hostname": service_node.attrib.get("hostname"),
                     "version": service_node.attrib.get("version"),
@@ -101,7 +103,7 @@ class NmapPlugin(BasePlugin):
                     "extrainfo": service_node.attrib.get("extrainfo"),
                 }
 
-                host_services.append(service_data)
+                host_services[f"{protocol}/{port}"] = service_data
 
             result[host_addr] = {"services": host_services}
 
