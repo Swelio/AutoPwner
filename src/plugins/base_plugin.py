@@ -75,3 +75,18 @@ class BasePlugin:
                 return
 
         self.get_logger().info("Start running")
+
+    def get_result_file(self) -> Path:
+        raise NotImplementedError
+
+    def get_parsed_file(self) -> Path:
+        raise NotImplementedError
+
+    def get_results(self) -> dict[str, dict[str, ...]]:
+        """
+        Parse plugin results to build a dictionary of targets and their results.
+        :return: {
+            target: { plugin_results: ... }
+        }
+        """
+        raise NotImplementedError
