@@ -2,11 +2,11 @@
 
 import argparse
 import ipaddress
-import json
 import sys
 
 from log_utils import get_logger
-from plugins import init_plugins, NmapPlugin, SearchsploitPlugin, merge_results
+from plugins import init_plugins, NmapPlugin, SearchsploitPlugin
+from plugins.report_exporter import ReportExporter
 
 PLUGINS_DIR = "data"
 
@@ -41,11 +41,8 @@ if __name__ == "__main__":
 
     nmap_runner = NmapPlugin()
     searchsploit_runner = SearchsploitPlugin()
+    exporter = ReportExporter()
 
     nmap_runner.run(cli_args.target, full=True)
     searchsploit_runner.run(cli_args.target)
-
-    results = merge_results()
-
-    with open("data/results.json", "w") as f:
-        f.write(json.dumps(results))
+    exporter.run()
