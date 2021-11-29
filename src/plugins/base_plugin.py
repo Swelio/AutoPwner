@@ -76,7 +76,7 @@ class BasePlugin:
     def run(self, *args, **kwargs):
         """Plugin executable task."""
         for plugin in self.requirements:
-            if len(list(plugin.get_plugin_dir().iterdir())) == 0:
+            if not plugin.get_parsed_file().exists():
                 self.get_logger().error(
                     f"Plugin requirement not satisfied: {plugin.name}"
                 )
