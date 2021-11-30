@@ -26,12 +26,13 @@ class PluginError(Exception):
 class BasePlugin:
     name: str = None
     requirements: list["BasePlugin"] = []
+    optional: bool = False  # if optional, runtime plugin error won't stop the script
 
     plugins_dir: Path = None
     _logger = None
 
     def __init__(self):
-        self.init_plugin(self.plugins_dir)
+        self.init_plugin()
         self.get_logger().debug("Plugin ready!")
 
     @classmethod
@@ -42,14 +43,12 @@ class BasePlugin:
         return cls._logger
 
     @classmethod
-    def init_plugin(cls, base_dir: Path):
+    def init_plugin(cls):
         """
         Setup initialization for plugin when program starts.
-
-        :param base_dir: plugins base directory installation.
         """
         cls.get_logger().info(f"Initialize plugin {cls.name}")
-        cls.plugins_dir = base_dir.absolute()
+        cls.plugins_dir = cls.plugins_dir.absolute()
 
         result_dir = cls.get_plugin_dir()
 
@@ -71,7 +70,7 @@ class BasePlugin:
 
     @classmethod
     def get_result_file(cls) -> Path:
-        raise NotImplementedError
+        return cls.get_parsed_file()
 
     def run(self, *args, **kwargs):
         """Plugin executable task."""

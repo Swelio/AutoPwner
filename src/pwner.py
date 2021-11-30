@@ -5,7 +5,7 @@ import ipaddress
 import sys
 
 from log_utils import get_logger
-from plugins import init_plugins, NmapPlugin, SearchsploitPlugin
+from plugins import init_plugins, NmapPlugin, SearchsploitPlugin, KerbrutePlugin
 from plugins.report_exporter import ReportExporter
 
 PLUGINS_DIR = "data"
@@ -17,6 +17,8 @@ def setup_arguments() -> argparse.ArgumentParser:
         description="Scan network, check for vulnerabilities and try to exploit it.",
     )
     parser.add_argument("target", help="Ip address of network or machine to target.")
+    parser.add_argument("--user-list", help="User wordlist to use.")
+    parser.add_argument("--password-list", help="Password wordlist to use.")
 
     return parser
 
@@ -41,8 +43,10 @@ if __name__ == "__main__":
 
     nmap_runner = NmapPlugin()
     searchsploit_runner = SearchsploitPlugin()
+    kerbrute_runner = KerbrutePlugin()
     exporter = ReportExporter()
 
     nmap_runner.run(cli_args.target, full=True)
     searchsploit_runner.run(cli_args.target)
+    kerbrute_runner.run(cli_args.user_list, cli_args.password_list)
     exporter.run()

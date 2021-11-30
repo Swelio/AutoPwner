@@ -4,6 +4,7 @@ import itertools
 import json
 from pathlib import Path
 
+from plugins import CredentialsManager
 from plugins.base_plugin import BasePlugin, get_subclasses
 
 
@@ -22,6 +23,8 @@ def deep_update(*merged_dicts: dict) -> dict:
                 result_value = result.get(key, list())
 
                 for item in value:
+                    if isinstance(item, list):
+                        item = tuple(item)
                     if item not in result_value:
                         result_value.append(copy.deepcopy(item))
 
@@ -57,12 +60,20 @@ def merge_results() -> dict[str, dict[str, ...]]:
     result = {}
 
     for plugin_class in get_subclasses(BasePlugin):
-        if plugin_class.name is None or plugin_class == ReportExporter:
+        if (
+            plugin_class.name is None
+            or plugin_class == ReportExporter
+            or plugin_class == CredentialsManager
+        ):
             continue
 
-        with plugin_class.get_parsed_file().open() as f:
-            parse = json.loads(f.read())
-        result = deep_update(result, parse)
+        try:
+            with plugin_class.get_parsed_file().open() as f:
+                parse = json.loads(f.read())
+            result = deep_update(result, parse)
+        except FileNotFoundError:
+            if plugin_class.optional is False:
+                raise
 
     return result
 
