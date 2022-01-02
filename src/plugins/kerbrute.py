@@ -14,7 +14,7 @@ class KerbrutePlugin(BasePlugin):
     requirements = [NmapPlugin]
     optional = True
 
-    def kerbrute_target(
+    def run_kerbrute(
         self,
         user_wordlist: str,
         password_wordlist: str,
@@ -126,7 +126,7 @@ class KerbrutePlugin(BasePlugin):
             else:
                 continue
 
-            host_credentials = self.kerbrute_target(
+            host_credentials = self.run_kerbrute(
                 user_wordlist, password_wordlist, host, host_data
             )
             found_credentials |= host_credentials
