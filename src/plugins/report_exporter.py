@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from plugins import CredentialsManager
-from plugins.base_plugin import BasePlugin, get_subclasses
+from plugins.core import BasePlugin, get_subclasses
 
 
 def deep_update(*merged_dicts: dict) -> dict:
