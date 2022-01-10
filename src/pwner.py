@@ -9,12 +9,14 @@ from plugins.core import init_database, target_is_valid
 from plugins.exploit_search import exploit_researcher
 from plugins.kerbrute import kerbrute_executor
 from plugins.nmap import nmap_executor
+from plugins.report_exporter import export_results
 
 
 def setup_arguments() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         "AutoPwner",
         description="Scan network, check for vulnerabilities and try to exploit it.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "target", help="IP address of network or machine to target.", nargs="+"
@@ -60,6 +62,7 @@ if __name__ == "__main__":
     targets = tuple(targets)
 
     data_dir = os.path.join(os.getcwd(), "data")
+    os.makedirs(data_dir, exist_ok=True)
     init_database(cli_args.database, log_level=log_level)
 
     nmap_executor(*targets, save_dir=data_dir, full_scan=True, log_level=log_level)
@@ -71,3 +74,4 @@ if __name__ == "__main__":
         user_wordlist=cli_args.user_list,
         password_wordlist=cli_args.password_list,
     )
+    export_results(*targets, save_dir=data_dir, log_level=log_level)

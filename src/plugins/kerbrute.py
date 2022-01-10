@@ -3,7 +3,7 @@ import logging
 import os
 import re
 import subprocess
-from typing import Union
+from typing import Optional, Union
 
 from plugins.core import (
     HostModel,
@@ -21,8 +21,8 @@ def kerbrute_executor(
     *targets: Union[str, int],
     save_dir: str,
     logger: logging.Logger,
-    user_wordlist: str,
-    password_wordlist: str,
+    user_wordlist: Optional[str] = None,
+    password_wordlist: Optional[str] = None,
 ):
     """
     Use kerbrute on targets to bruteforce credentials.
@@ -101,9 +101,12 @@ def kerbrute_executor(
                 db_user_wordlist_path,
             )
 
-        enumerate_users(
-            target_host, target_domain, user_enum_log_path, logger, user_wordlist
-        )
+        if user_wordlist is None:
+            logger.debug("User wordlist not provided, skip it.")
+        else:
+            enumerate_users(
+                target_host, target_domain, user_enum_log_path, logger, user_wordlist
+            )
 
         known_users = (
             HostUserModel.select(HostUserModel.username)
@@ -130,16 +133,19 @@ def kerbrute_executor(
                     db_password_wordlist_path,
                 )
 
-        logger.debug(f"Bruteforce using provided wordlist: {password_wordlist}")
-        for known_user in known_users:
-            bruteforce_user(
-                target_host,
-                target_domain,
-                bruteforce_log_path,
-                logger,
-                known_user.username,
-                password_wordlist,
-            )
+        if password_wordlist is None:
+            logger.debug("Password wordlist not provided, skip it.")
+        else:
+            logger.debug(f"Bruteforce using provided wordlist: {password_wordlist}")
+            for known_user in known_users:
+                bruteforce_user(
+                    target_host,
+                    target_domain,
+                    bruteforce_log_path,
+                    logger,
+                    known_user.username,
+                    password_wordlist,
+                )
 
 
 def enumerate_users(
@@ -295,7 +301,7 @@ def setup_database_username_wordlist(*targets: Union[str, int], db_wordlist_path
 def setup_database_password_wordlist(*targets: Union[str, int], db_wordlist_path: str):
     """Store known password from database to wordlist."""
 
-    known_passwords = ServiceCredentials.select(ServiceCredentials.password).distinct()
+    known_passwords = ServiceCredentials.select(ServiceCredentials).distinct()
 
     if len(targets) > 0:
         host_predicate = get_targets_predicate(*targets)
