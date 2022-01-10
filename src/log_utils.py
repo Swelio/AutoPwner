@@ -1,70 +1,70 @@
 """
 Provide logging configurable methods.
 """
-
+import datetime
 import logging
+import os.path
 from logging import LogRecord
 from typing import Union
 
-__all__ = ["get_logger", "ColoredFormatted"]
-
-LOG_FORMAT = "%(levelname)s::%(asctime)s::%(name)s::%(message)s"
-LOG_LEVEL = "DEBUG"
+__all__ = ["get_logger"]
 
 
 def get_logger(
     logger_name: str,
-    log_level: Union[int, str] = LOG_LEVEL,
-    output_format: str = LOG_FORMAT,
-    console_output: bool = True,
+    log_level: Union[int, str] = logging.DEBUG,
+    output_format: str = "%(levelname)s::%(asctime)s::%(name)s::%(message)s",
     color_console: bool = True,
-    log_file: str = None,
+    log_dir: str = None,
 ) -> logging.Logger:
     """Setup class_logger and attach handlers on it."""
 
     if isinstance(log_level, str):
         log_level = logging.getLevelName(log_level)
 
-    assert log_level in [
+    if log_level not in [
         logging.CRITICAL,
         logging.ERROR,
         logging.WARNING,
         logging.INFO,
         logging.DEBUG,
-    ], "Invalid log level."
-    assert isinstance(output_format, str) and output_format, "Invalid log format."
-    assert isinstance(console_output, bool), "Invalid console output mode."
-    assert log_file is None or (
-        isinstance(log_file, str) and log_file and not log_file.endswith(".py")
-    ), "Invalid log file"
-    assert console_output or log_file, "Logs have no output."
+    ]:
+        raise ValueError(f"Unknown log level: '{log_level}'")
 
     logger = logging.getLogger(logger_name)
-    logger.setLevel(log_level)
 
-    handlers = set()
+    if logger.hasHandlers():
+        return logger
+
+    logger.setLevel(logging.DEBUG)
 
     # Setup handlers and attach them to class_logger
-    if console_output is True:
-        console_handler = logging.StreamHandler()
-        if color_console is True:
-            console_handler.setFormatter(ColoredFormatted(output_format))
-        else:
-            console_handler.setFormatter(logging.Formatter(output_format))
-        handlers.add(console_handler)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(log_level)
 
-    if log_file:
-        file_handler = logging.FileHandler(log_file, encoding="utf-8")
+    if color_console is True:
+        console_handler.setFormatter(ColoredFormatter(output_format))
+    else:
+        console_handler.setFormatter(logging.Formatter(output_format))
+
+    logger.addHandler(console_handler)
+
+    if log_dir:
+        os.makedirs(log_dir, exist_ok=True)
+        log_path = os.path.join(
+            log_dir, datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S") + ".log"
+        )
+        file_handler = logging.FileHandler(log_path, encoding="utf-8")
+        # set file log level to DEBUG in order to save all logs
+        file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(logging.Formatter(output_format))
-        handlers.add(file_handler)
 
-    for handler in handlers:
-        logger.addHandler(handler)
+        logger.addHandler(file_handler)
 
     return logger
 
 
-class ColoredFormatted(logging.Formatter):
+class ColoredFormatter(logging.Formatter):
     """Color console outputs according to log level."""
 
     COLOR_SEQUENCE = "\033[0;{color}m"

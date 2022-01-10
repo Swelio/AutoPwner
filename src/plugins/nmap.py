@@ -1,112 +1,124 @@
 import grp
 import ipaddress
-import json
+import logging
 import os
 import pwd
 import subprocess
 import xml.etree.ElementTree as ET
-from pathlib import Path
 
-from plugins.base_plugin import BasePlugin
+from plugins.core import HostModel, ServiceModel, database_proxy, plugin
 
 
-class NmapPlugin(BasePlugin):
-    name = "nmap"
+@plugin("nmap")
+def nmap_executor(
+    *targets: str, save_dir: str, logger: logging.Logger, full_scan: bool = False
+):
+    """
+    Scan targets with nmap and register found hosts and services into database.
 
-    @classmethod
-    def get_result_file(cls) -> Path:
-        return cls.get_plugin_dir() / "services.xml"
+    :param targets: targets to scan. Can be IP address, range of IP or network IP.
+    :param save_dir: directory path to task results.
+    :param logger: task logger.
+    :param full_scan: on True, scan all ports.
+    """
 
-    def run(self, host: str, full: bool = False):
-        """
-        Use Nmap to discover host services. If full is True, then scan all ports.
-        For each service, yield data as: (port, name, product, version)
-        """
-        super().run()
-        self.get_logger().info(f"Analysis will run on {host}")
+    logger.info(f"Analysis will run on {', '.join(targets)}")
+    result_path = os.path.join(save_dir, "scan")
+    xml_path = result_path + ".xml"
 
-        xml_path = self.get_result_file()
-        result_path = Path(str(xml_path).removesuffix(".xml"))
-
-        if xml_path.exists():
-            self.get_logger().info(f"NMap result exists at '{xml_path}', skip scan.")
-        else:
-            self.get_logger().info(f"Scanning host '{host}' to find services")
-
-            cmd = ["/usr/bin/sudo", "/usr/bin/nmap", "-v", "-n", "-sS", "-sV"]
-            if full is True:
-                cmd.append("-p-")
-            cmd.extend(["-oA", str(result_path), host])
-
-            self.get_logger().info(f"Running command: {' '.join(cmd)}")
-            try:
-                subprocess.check_call(cmd)
-            finally:
-                pw_info = pwd.getpwuid(os.getuid())
-                subprocess.check_call(
-                    [
-                        "/usr/bin/sudo",
-                        "/usr/bin/chown",
-                        "--recursive",
-                        f"{pw_info.pw_name}:{grp.getgrgid(pw_info.pw_gid).gr_name}",
-                        self.plugins_dir,
-                    ]
-                )
-
-        self.get_logger().info(f"Raw results available at '{result_path}'")
-
-        if not self.get_parsed_file().exists():
-            parsed_results = self.get_results()
-            with self.get_parsed_file().open("w") as parsed_file_save:
-                parsed_file_save.write(json.dumps(parsed_results))
-
-        self.get_logger().info(
-            f"Parsed results available at '{self.get_parsed_file()}'"
+    if os.path.exists(xml_path):
+        logger.info(f"NMap result exists at '{xml_path}', skip scan.")
+    else:
+        logger.info(
+            f"Scanning host{'s' if len(targets) > 1 else ''} "
+            f"'{', '.join(targets)}' to find services"
         )
 
-    def get_results(self) -> dict[str, dict[str, dict[str, ...]]]:
-        """
-        Parse nmap xml file and for each host return its opened services.
-        :return: {
-            host: { "services": { "proto/port": { str: ... }}}
-        }
-        """
+        cmd = ["/usr/bin/sudo", "nmap", "-v", "-n", "-sS", "-sV"]
 
-        # result dictionary as described in docstring
-        result = {}
+        if full_scan is True:
+            cmd.append("-p-")
 
-        # parse result file and retrieve root node
-        xml_root = ET.parse(self.get_result_file()).getroot()
+        cmd.extend(["-oA", str(result_path)])
+        cmd.extend(targets)
 
-        self.get_logger().info("Parsing nmap result file...")
-
-        for host_node in xml_root.iterfind(".//host"):
-            host_services = {}
-            host_addr = str(
-                ipaddress.ip_network(host_node.find("address").attrib["addr"])
+        logger.info(f"Running command: {' '.join(cmd)}")
+        try:
+            subprocess.check_call(cmd)
+        finally:
+            pw_info = pwd.getpwuid(os.getuid())
+            subprocess.check_call(
+                [
+                    "/usr/bin/sudo",
+                    "/usr/bin/chown",
+                    "--recursive",  # apply to whole directory
+                    # current user id and group
+                    f"{pw_info.pw_name}:{grp.getgrgid(pw_info.pw_gid).gr_name}",
+                    # results dir
+                    save_dir,
+                ]
             )
 
-            for port_node in host_node.iterfind('.//port/state[@state="open"]/..'):
-                service_node = port_node.find("service")
+    logger.info(f"Raw results are available at '{result_path}'")
+    logger.debug("Processing results...")
 
-                protocol = port_node.attrib["protocol"]
-                port = int(port_node.attrib["portid"])
+    # parse result file and retrieve root node
+    xml_root = ET.parse(xml_path).getroot()
 
-                service_data = {
-                    "protocol": protocol,
-                    "port": port,
-                    "name": service_node.attrib.get("name"),
-                    "hostname": service_node.attrib.get("hostname"),
-                    "version": service_node.attrib.get("version"),
-                    "product": service_node.attrib.get("product"),
-                    "ostype": service_node.attrib.get("ostype"),
-                    "extrainfo": service_node.attrib.get("extrainfo"),
-                }
+    hosts_to_update = []
+    services_to_update = []
 
-                host_services[f"{protocol}/{port}"] = service_data
+    for host_node in xml_root.iterfind(".//host"):
+        host_addr = int(ipaddress.ip_address(host_node.find("address").attrib["addr"]))
+        host_data, _ = HostModel.get_or_create(ip_address=host_addr)
 
-            result[host_addr] = {"services": host_services}
+        hosts_to_update.append(host_data)
 
-        self.get_logger().info("Done.")
+        for port_node in host_node.iterfind('.//port/state[@state="open"]/..'):
+            service_node = port_node.find("service")
 
-        return result
+            # Host info from service
+            hostname = service_node.attrib.get("hostname")
+            os_type = service_node.attrib.get("ostype")
+
+            if hostname is not None:
+                host_data.hostname = hostname
+
+            if os_type is not None:
+                host_data.operating_system = os_type
+
+            # Service data
+            protocol = port_node.attrib["protocol"]
+            port = int(port_node.attrib["portid"])
+
+            service_data, _ = ServiceModel.get_or_create(
+                host=host_data, port=port, protocol=protocol
+            )
+            service_data.name = service_node.attrib.get("name")
+            service_data.product = service_node.attrib.get("product")
+            service_data.extra_info = service_node.attrib.get("extrainfo")
+
+            services_to_update.append(service_data)
+
+    with database_proxy.atomic():
+        logger.info(
+            f"Found {len(hosts_to_update)} hosts and {len(services_to_update)} services"
+        )
+
+        if len(hosts_to_update) > 0:
+            HostModel.bulk_update(
+                hosts_to_update, [HostModel.hostname, HostModel.operating_system]
+            )
+
+        if len(services_to_update) > 0:
+            ServiceModel.bulk_update(
+                services_to_update,
+                [
+                    ServiceModel.name,
+                    ServiceModel.version,
+                    ServiceModel.product,
+                    ServiceModel.extra_info,
+                ],
+            )
+
+    logger.info("Done.")
