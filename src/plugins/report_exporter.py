@@ -1,9 +1,12 @@
+import collections
 import datetime
 import ipaddress
 import itertools
 import logging
 import os.path
 from typing import Union
+
+import peewee
 
 from plugins.core import HostModel, ServiceCredentials, ServiceModel, plugin
 from plugins.exploit_search import ExploitModel
@@ -69,16 +72,24 @@ def get_target_block(target_host: HostModel) -> str:
     :param target_host: HostModel to print.
     :return: markdown string with target findings.
     """
+
+    def query_models_data_constructor(**row):
+        model = collections.namedtuple("SelectMerger", ("service", "exploit"))
+        return model(service=ServiceModel(**row), exploit=ExploitModel(**row))
+
     target_ip = ipaddress.ip_address(target_host.ip_address)
 
-    exploits_query = (
-        ExploitModel.select(ExploitModel, ServiceModel)
+    services_query = (
+        ServiceModel.select(ServiceModel, ExploitModel)
         .join_from(
-            ExploitModel, ServiceModel, on=(ExploitModel.service == ServiceModel.id)
+            ServiceModel,
+            ExploitModel,
+            join_type=peewee.JOIN.LEFT_OUTER,
+            on=(ServiceModel.id == ExploitModel.service),
         )
         .where(ServiceModel.host == target_host)
         .order_by(ServiceModel.port.asc())
-    )
+    ).objects(query_models_data_constructor)
 
     credentials_query = (
         ServiceCredentials.select(ServiceCredentials)
@@ -93,7 +104,7 @@ def get_target_block(target_host: HostModel) -> str:
 
     result = (
         f"### {str(target_ip)} - "
-        f"({exploits_query.count()} exploits, "
+        f"({services_query.where(ExploitModel.id.is_null(False)).count()} exploits, "
         f"{credentials_query.count()} credentials)\n\n"
     )
     result += f"Hostname = {target_host.hostname}\n\n"
@@ -113,12 +124,14 @@ def get_target_block(target_host: HostModel) -> str:
 
         result += "\n"
 
-    for service, exploits in itertools.groupby(exploits_query, key=lambda x: x.service):
-        exploits_list = list(exploits)
+    for service, exploits in itertools.groupby(services_query, key=lambda x: x.service):
+        exploits_list = list(
+            filter(lambda x: x.title, map(lambda m: m.exploit, exploits))
+        )
 
         result += (
             f"#### {service.protocol}/{service.port} - {service.product} - "
-            f"({len(exploits_list)} exploits)\n\n"
+            f"{service.version} - ({len(exploits_list)} exploits)\n\n"
         )
 
         for exploit in exploits_list:

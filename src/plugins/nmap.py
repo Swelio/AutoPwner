@@ -78,14 +78,8 @@ def nmap_executor(
             service_node = port_node.find("service")
 
             # Host info from service
-            hostname = service_node.attrib.get("hostname")
-            os_type = service_node.attrib.get("ostype")
-
-            if hostname is not None:
-                host_data.hostname = hostname
-
-            if os_type is not None:
-                host_data.operating_system = os_type
+            host_data.hostname = service_node.attrib.get("hostname")
+            host_data.operating_system = service_node.attrib.get("ostype")
 
             # Service data
             protocol = port_node.attrib["protocol"]
@@ -95,6 +89,7 @@ def nmap_executor(
                 host=host_data, port=port, protocol=protocol
             )
             service_data.name = service_node.attrib.get("name")
+            service_data.version = service_node.attrib.get("version")
             service_data.product = service_node.attrib.get("product")
             service_data.extra_info = service_node.attrib.get("extrainfo")
 
