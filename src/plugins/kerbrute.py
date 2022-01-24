@@ -170,7 +170,7 @@ def enumerate_users(
         fr"\[\+]\sVALID\sUSERNAME:\s+(?P<username>[^@]+)@{target_domain}"
     )
 
-    logger.debug(f"Enumerate users from wordlist: {user_wordlist}")
+    logger.info(f"Enumerate users from wordlist: {user_wordlist}")
 
     kerbrute_cmd = [
         "kerbrute",
@@ -201,7 +201,7 @@ def enumerate_users(
             host_user = HostUserModel(host=target_host, username=username)
             host_users_to_create.add(host_user)
 
-    logger.debug(
+    logger.info(
         f"Found {len(host_users_to_create)} "
         f"username{'s' if len(host_users_to_create) > 1 else ''}."
     )
