@@ -67,6 +67,10 @@ def kerbrute_executor(
 
         logger.debug(f"Running kerbrute on target: {target_host.get_ip()}")
         target_domain = target_domain_match.group("domain")
+
+        target_host.domain = target_domain
+        target_host.save()
+
         logger.info(
             f"Attacking Kerberos on domain {target_domain} at {target_host.get_ip()}"
         )

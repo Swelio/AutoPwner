@@ -107,7 +107,9 @@ def get_target_block(target_host: HostModel) -> str:
         f"({services_query.where(ExploitModel.id.is_null(False)).count()} exploits, "
         f"{credentials_query.count()} credentials)\n\n"
     )
-    result += f"Hostname = {target_host.hostname}\n\n"
+    result += f"Hostname = {target_host.hostname or 'Unknown'}\n"
+    result += f"Domain = {target_host.domain or 'Unknown'}\n"
+    result += "\n"
 
     for service, credentials in itertools.groupby(
         credentials_query, key=lambda x: x.service
@@ -129,10 +131,10 @@ def get_target_block(target_host: HostModel) -> str:
             filter(lambda x: x.title, map(lambda m: m.exploit, exploits))
         )
 
-        result += (
-            f"#### {service.protocol}/{service.port} - {service.product} - "
-            f"{service.version} - ({len(exploits_list)} exploits)\n\n"
-        )
+        result += f"#### {service.protocol}/{service.port} - {service.product} "
+        if service.version is not None:
+            result += f"- {service.version} "
+        result += f"- ({len(exploits_list)} exploits)\n\n"
 
         for exploit in exploits_list:
             result += f"- {exploit.title}\n"

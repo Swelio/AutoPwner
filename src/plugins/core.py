@@ -194,6 +194,7 @@ class HostModel(BaseModel):
     ip_address = peewee.IntegerField(unique=True, index=True)
     operating_system = peewee.CharField(index=True, null=True)
     hostname = peewee.CharField(null=True)
+    domain = peewee.CharField(null=True)
 
     class Meta:
         db_table = "host"
