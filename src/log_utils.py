@@ -52,7 +52,7 @@ def get_logger(
     if log_dir:
         os.makedirs(log_dir, exist_ok=True)
         log_path = os.path.join(
-            log_dir, datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S") + ".log"
+            log_dir, datetime.datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S") + ".log"
         )
         file_handler = logging.FileHandler(log_path, encoding="utf-8")
         # set file log level to DEBUG in order to save all logs

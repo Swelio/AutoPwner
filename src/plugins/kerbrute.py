@@ -71,7 +71,7 @@ def kerbrute_executor(
             f"Attacking Kerberos on domain {target_domain} at {target_host.get_ip()}"
         )
 
-        run_time = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        run_time = datetime.datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S")
         suffix = f"{run_time}_{target_domain}_{target_host.get_ip()}"
         user_enum_basename = os.path.join(user_enumeration_dir, suffix)
         bruteforce_basename = os.path.join(password_bruteforce_dir, suffix)
