@@ -4,6 +4,7 @@ Provide logging configurable methods.
 import datetime
 import logging
 import os.path
+import sys
 from logging import LogRecord
 from typing import Union
 
@@ -39,7 +40,7 @@ def get_logger(
     logger.setLevel(logging.DEBUG)
 
     # Setup handlers and attach them to class_logger
-    console_handler = logging.StreamHandler()
+    console_handler = logging.StreamHandler(stream=sys.stdout)
     console_handler.setLevel(log_level)
 
     if color_console is True:
