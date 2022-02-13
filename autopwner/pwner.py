@@ -2,14 +2,13 @@
 import argparse
 import logging
 import os
-import sys
 
-from log_utils import get_logger
-from plugins.core import init_database, target_is_valid
-from plugins.exploit_search import exploit_researcher
-from plugins.kerbrute import kerbrute_executor
-from plugins.nmap import nmap_executor
-from plugins.report_exporter import export_results
+from .log_utils import get_logger
+from .plugins.core import init_database, target_is_valid
+from .plugins.exploit_search import exploit_researcher
+from .plugins.kerbrute import kerbrute_executor
+from .plugins.nmap import nmap_executor
+from .plugins.report_exporter import export_results
 
 
 def setup_arguments() -> argparse.ArgumentParser:
@@ -41,8 +40,7 @@ def setup_arguments() -> argparse.ArgumentParser:
     return parser
 
 
-if __name__ == "__main__":
-
+def client_main() -> int:
     cli_parser = setup_arguments()
     cli_args = cli_parser.parse_args()
 
@@ -57,7 +55,7 @@ if __name__ == "__main__":
             targets.add(target)
         else:
             main_logger.critical(f"Invalid target found: {target}")
-            sys.exit(1)
+            return 1
 
     targets = tuple(targets)
 
@@ -75,3 +73,5 @@ if __name__ == "__main__":
         password_wordlist=cli_args.password_list,
     )
     export_results(*targets, save_dir=data_dir, log_level=log_level)
+
+    return 0

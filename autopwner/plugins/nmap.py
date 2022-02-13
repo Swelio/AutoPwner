@@ -1,12 +1,10 @@
-import grp
 import ipaddress
 import logging
 import os
-import pwd
 import subprocess
 import xml.etree.ElementTree as ET
 
-from plugins.core import HostModel, ServiceModel, database_proxy, plugin
+from .core import HostModel, ServiceModel, database_proxy, plugin
 
 
 @plugin("nmap")
@@ -29,6 +27,11 @@ def nmap_executor(
     if os.path.exists(xml_path):
         logger.info(f"NMap result exists at '{xml_path}', skip scan.")
     else:
+
+        # Create empty files as current user
+        for extension in ("gnmap", "nmap", "xml"):
+            open(f"{result_path}.{extension}", "w").close()
+
         logger.info(
             f"Scanning host{'s' if len(targets) > 1 else ''} "
             f"'{', '.join(targets)}' to find services"
@@ -45,19 +48,9 @@ def nmap_executor(
         logger.info(f"Running command: {' '.join(cmd)}")
         try:
             subprocess.check_call(cmd)
-        finally:
-            pw_info = pwd.getpwuid(os.getuid())
-            subprocess.check_call(
-                [
-                    "/usr/bin/sudo",
-                    "/usr/bin/chown",
-                    "--recursive",  # apply to whole directory
-                    # current user id and group
-                    f"{pw_info.pw_name}:{grp.getgrgid(pw_info.pw_gid).gr_name}",
-                    # results dir
-                    save_dir,
-                ]
-            )
+        except subprocess.CalledProcessError:
+            for extension in ("gnmap", "nmap", "xml"):
+                os.remove(f"{result_path}.{extension}")
 
     logger.info(f"Raw results are available at '{result_path}'")
     logger.debug("Processing results...")

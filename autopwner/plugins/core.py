@@ -6,7 +6,7 @@ from typing import Iterator, Type, Union
 
 import peewee
 
-from log_utils import get_logger
+from ..log_utils import get_logger
 
 database_proxy = peewee.DatabaseProxy()
 

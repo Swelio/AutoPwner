@@ -5,7 +5,7 @@ import re
 import subprocess
 from typing import Optional, Union
 
-from plugins.core import (
+from .core import (
     HostModel,
     HostUserModel,
     ServiceCredentials,
@@ -171,7 +171,7 @@ def enumerate_users(
     """
 
     user_regex = re.compile(
-        fr"\[\+]\sVALID\sUSERNAME:\s+(?P<username>[^@]+)@{target_domain}"
+        rf"\[\+]\sVALID\sUSERNAME:\s+(?P<username>[^@]+)@{target_domain}"
     )
 
     logger.info(f"Enumerate users from wordlist: {user_wordlist}")
@@ -231,7 +231,7 @@ def bruteforce_user(
     )
     credentials_regex = re.compile(
         r"\[\+]\sVALID\sLOGIN:\s+"
-        fr"(?P<username>[^@]+)@{target_domain}:(?P<password>[^\n\r\u001b]*)"
+        rf"(?P<username>[^@]+)@{target_domain}:(?P<password>[^\n\r\u001b]*)"
     )
 
     logger.debug(f"Bruteforce user {username}")

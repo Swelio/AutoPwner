@@ -8,8 +8,8 @@ from typing import Union
 
 import peewee
 
-from plugins.core import HostModel, ServiceCredentials, ServiceModel, plugin
-from plugins.exploit_search import ExploitModel
+from .core import HostModel, ServiceCredentials, ServiceModel, plugin
+from .exploit_search import ExploitModel
 
 
 @plugin("export_results")
